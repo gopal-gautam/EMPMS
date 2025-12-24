@@ -68,7 +68,7 @@ export const Login = () => {
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <p className="text-sm text-gray-600">
-                Secure authentication powered by Auth0
+                Secure authentication
               </p>
 
               <button
@@ -88,7 +88,7 @@ export const Login = () => {
                     />
                   </svg>
                 </span>
-                Sign in with Auth0
+                Sign in
               </button>
 
               <div className="relative">
