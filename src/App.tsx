@@ -5,6 +5,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { CreateEmployee } from './pages/CreateEmployee';
 
 function App() {
   return (
@@ -29,6 +30,14 @@ function App() {
             element={
               <ProtectedRoute  requiredRole="Admin">
                 <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees/create"
+            element={
+              <ProtectedRoute requiredRole='Admin'>
+                <CreateEmployee />
               </ProtectedRoute>
             }
           />
