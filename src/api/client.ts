@@ -9,7 +9,13 @@ const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   const token = await getAccessTokenSilently();
-  if (token) config.headers = { ...config.headers, Authorization: `Bearer ${token}` };
+  if (token) {
+    if (config.headers) {
+      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    } else {
+      config.headers = { Authorization: `Bearer ${token}` } as any;
+    }
+  }
   return config;
 });
 

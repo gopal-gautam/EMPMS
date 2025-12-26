@@ -12,8 +12,8 @@ async function ensureClient() {
 
   auth0Client = await createAuth0Client({
     domain: auth0Config.domain,
-    client_id: auth0Config.clientId,
-    redirect_uri: auth0Config.authorizationParams.redirect_uri,
+    clientId: auth0Config.clientId,
+    authorizationParams: auth0Config.authorizationParams,
     // caching & refresh choices — adjust as needed:
     cacheLocation: 'memory', // 'localstorage' if you want persist across reloads
     useRefreshTokens: true,
@@ -42,9 +42,9 @@ export async function loginWithRedirect(opts?: Record<string, unknown>) {
 }
 
 /** Convenience: logout (optional). */
-export async function logout(opts?: { returnTo?: string }) {
+export async function logout(opts?: Parameters<Auth0Client['logout']>[0]) {
   const client = await ensureClient();
-  return client.logout(opts);
+  return client.logout(opts as any);
 }
 
 /** Optional: check if user is authenticated (quick) */
