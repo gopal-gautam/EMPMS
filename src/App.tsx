@@ -6,6 +6,8 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { CreateEmployee } from './pages/CreateEmployee';
+import ListEmployees from './pages/ListEmployees';
+import ViewEmployee from './pages/ViewEmployee';
 
 function App() {
   return (
@@ -38,6 +40,22 @@ function App() {
             element={
               <ProtectedRoute requiredRole='Admin'>
                 <CreateEmployee />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute requiredRole='Admin'>
+                <ListEmployees />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees/:id"
+            element={
+              <ProtectedRoute requiredRole='Admin'>
+                <ViewEmployee />
               </ProtectedRoute>
             }
           />

@@ -52,7 +52,7 @@ export const Sidebar = ({ activeMenu, onMenuChange }: SidebarProps) => {
         </svg>
       ),
       submenu: [
-        { id: 'all-employees', label: 'All Employees' },
+        { id: 'all-employees', label: 'All Employees', link: '/employees' },
         { id: 'add-employee', label: 'Add Employee', link: '/employees/create' },
         { id: 'departments', label: 'Departments / Positions' },
       ],
