@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { LayoutWithSidebarTopbar } from '../layouts/LayoutWithSidebarTopbar';
+import { useNavigate } from 'react-router-dom';
+import { createEmployee } from '../api/employees';
+import { CreateEmployeePayload } from '../types/employee';
 
 interface EmployeeFormData {
   // Personal Information
@@ -56,44 +59,48 @@ interface EmployeeFormData {
 
 export const CreateEmployee = () => {
   const [formData, setFormData] = useState<EmployeeFormData>({
-    firstName: '',
-    middleName: '',
-    lastName: '',
-    dateOfBirth: '',
-    gender: '',
-    maritalStatus: '',
+    firstName: 'Suresh',
+    middleName: 'Prasad',
+    lastName: 'Adhikari',
+    dateOfBirth: '1992-04-18',
+    gender: 'Male',
+    maritalStatus: 'Married',
     nationality: 'Nepalese',
-    email: '',
-    phone: '',
-    alternatePhone: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
+    email: 'suresh.adhikari92@gmail.com',
+    phone: '+977-9841234567',
+    alternatePhone: '+977-9807654321',
+    address: 'Baluwatar-4',
+    city: 'Kathmandu',
+    state: 'Province No. 3',
+    zipCode: '44600',
     country: 'Nepal',
-    employeeId: '',
-    department: '',
-    position: '',
-    jobTitle: '',
-    employmentType: '',
-    dateOfJoining: '',
-    workLocation: '',
-    reportingManager: '',
-    bankName: '',
-    accountNumber: '',
-    ifscCode: '',
-    emergencyContactName: '',
-    emergencyContactRelation: '',
-    emergencyContactPhone: '',
-    emergencyContactAddress: '',
-    citizenShipNumber: '',
-    panNumber: '',
-    passportNumber: '',
-    drivingLicense: '',
-    bloodGroup: '',
-    allergies: '',
-    notes: '',
+    employeeId: 'EMP-KTM-1047',
+    department: 'Information Technology',
+    position: 'Senior Software Engineer',
+    jobTitle: 'Backend Developer',
+    employmentType: 'Full-Time',
+    dateOfJoining: '2019-07-01',
+    workLocation: 'Head Office, Kathmandu',
+    reportingManager: 'Ramesh Shrestha',
+    bankName: 'Nabil Bank Limited',
+    accountNumber: '01020123456789',
+    ifscCode: 'NABILNPKA01',
+    emergencyContactName: 'Mina Adhikari',
+    emergencyContactRelation: 'Spouse',
+    emergencyContactPhone: '+977-9812345678',
+    emergencyContactAddress: 'Baluwatar-4, Kathmandu',
+    citizenShipNumber: '01-04-79-12345',
+    panNumber: '301234567',
+    passportNumber: 'PA1234567',
+    drivingLicense: '03-01-012345',
+    bloodGroup: 'O+',
+    allergies: 'None',
+    notes: 'Reliable employee with strong problem-solving skills.'
+
   });
+
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const [activeSection, setActiveSection] = useState<string>('personal');
   const [profileImage, setProfileImage] = useState<string>('');
@@ -114,10 +121,30 @@ export const CreateEmployee = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     console.log('Form submitted:', formData);
-    // TODO: Add API call to save employee data
+    try {
+      const dobIso = formData.dateOfBirth
+      ? new Date(`${formData.dateOfBirth}T00:00:00Z`).toISOString()
+      : undefined;
+    const dojIso = formData.dateOfJoining
+      ? new Date(`${formData.dateOfJoining}T00:00:00Z`).toISOString()
+      : undefined;
+      const payload: CreateEmployeePayload = {
+        ...formData,
+        dateOfBirth: dobIso,
+        dateOfJoining: dojIso,
+    } as CreateEmployeePayload;
+
+      await createEmployee(payload);
+      navigate('/employees');
+    } catch (error) {
+      console.error('Error creating employee:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const sections = [
@@ -927,10 +954,11 @@ export const CreateEmployee = () => {
                         Save as Draft
                       </button>
                       <button
-                        type="submit"
+                          type="submit"
+                          disabled={isSubmitting}
                         className="px-6 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-colors shadow-md"
                       >
-                        Create Employee
+                          {isSubmitting ? 'Creating...' : 'Create Employee'}
                       </button>
                     </>
                   )}
