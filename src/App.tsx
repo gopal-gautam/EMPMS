@@ -8,6 +8,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { CreateEmployee } from './pages/CreateEmployee';
 import ListEmployees from './pages/ListEmployees';
 import ViewEmployee from './pages/ViewEmployee';
+import CalendarView from './pages/CalendarView';
 
 function App() {
   // Debug: verify that authorizationParams (audience/scope) are set at runtime
@@ -62,6 +63,14 @@ function App() {
             element={
               <ProtectedRoute requiredRole='Admin'>
                 <ViewEmployee />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar-view"
+            element={
+              <ProtectedRoute requiredRole='Admin'>
+                <CalendarView />
               </ProtectedRoute>
             }
           />

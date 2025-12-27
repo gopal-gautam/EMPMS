@@ -66,7 +66,7 @@ export const Sidebar = ({ activeMenu, onMenuChange }: SidebarProps) => {
         </svg>
       ),
       submenu: [
-        { id: 'calendar', label: 'Calendar' },
+        { id: 'calendar-view', label: 'Calendar', link: '/calendar-view' },
         { id: 'clock-records', label: 'Clock In/Out Records' },
         { id: 'manual-adjustments', label: 'Manual Adjustments' },
       ],
