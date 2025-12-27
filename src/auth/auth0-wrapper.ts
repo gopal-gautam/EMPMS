@@ -15,7 +15,7 @@ async function ensureClient() {
     clientId: auth0Config.clientId,
     authorizationParams: auth0Config.authorizationParams,
     // caching & refresh choices — adjust as needed:
-    cacheLocation: 'memory', // 'localstorage' if you want persist across reloads
+    cacheLocation: 'localstorage', // 'localstorage' if you want persist across reloads
     useRefreshTokens: true,
   });
 

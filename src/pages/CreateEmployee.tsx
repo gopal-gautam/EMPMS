@@ -399,7 +399,7 @@ export const CreateEmployee = () => {
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="+91 1234567890"
+                        placeholder="+977 xxxxxxxxx"
                       />
                     </div>
                   </div>
@@ -415,7 +415,7 @@ export const CreateEmployee = () => {
                         value={formData.alternatePhone}
                         onChange={handleInputChange}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="+91 1234567890"
+                        placeholder="+977 xxxxxxxxxx"
                       />
                     </div>
                   </div>
