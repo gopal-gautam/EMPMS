@@ -26,7 +26,7 @@ const ListEmployees: React.FC = () => {
     );
   }
 
-  if (!employees || employees.length === 0) {
+  if (!employees) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-500">No employees found</div>
