@@ -63,8 +63,8 @@ export const CreateEmployee = () => {
     middleName: 'Prasad',
     lastName: 'Adhikari',
     dateOfBirth: '1992-04-18',
-    gender: 'Male',
-    maritalStatus: 'Married',
+    gender: 'male',
+    maritalStatus: 'married',
     nationality: 'Nepalese',
     email: 'suresh.adhikari92@gmail.com',
     phone: '+977-9841234567',
@@ -75,10 +75,10 @@ export const CreateEmployee = () => {
     zipCode: '44600',
     country: 'Nepal',
     employeeId: 'EMP-KTM-1047',
-    department: 'Information Technology',
-    position: 'Senior Software Engineer',
+    department: 'it',
+    position: 'junior',
     jobTitle: 'Backend Developer',
-    employmentType: 'Full-Time',
+    employmentType: 'intern',
     dateOfJoining: '2019-07-01',
     workLocation: 'Head Office, Kathmandu',
     reportingManager: 'Ramesh Shrestha',
@@ -104,10 +104,76 @@ export const CreateEmployee = () => {
 
   const [activeSection, setActiveSection] = useState<string>('personal');
   const [profileImage, setProfileImage] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const validateSection = (sectionId: string): boolean => {
+    const errors: string[] = [];
+
+    switch (sectionId) {
+      case 'personal':
+        if (!formData.firstName.trim()) errors.push('First Name is required');
+        if (!formData.lastName.trim()) errors.push('Last Name is required');
+        if (!formData.dateOfBirth) errors.push('Date of Birth is required');
+        if (!formData.gender) errors.push('Gender is required');
+        break;
+
+      case 'contact':
+        if (!formData.email.trim()) errors.push('Email Address is required');
+        if (!formData.phone.trim()) errors.push('Phone Number is required');
+        if (!formData.address.trim()) errors.push('Address is required');
+        if (!formData.city.trim()) errors.push('City is required');
+        if (!formData.state.trim()) errors.push('State is required');
+        if (!formData.zipCode.trim()) errors.push('ZIP Code is required');
+        if (!formData.country.trim()) errors.push('Country is required');
+
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (formData.email && !emailRegex.test(formData.email)) {
+          errors.push('Please enter a valid email address');
+        }
+        break;
+
+      case 'employment':
+        if (!formData.employeeId.trim()) errors.push('Employee ID is required');
+        if (!formData.dateOfJoining) errors.push('Date of Joining is required');
+        if (!formData.department) errors.push('Department is required');
+        if (!formData.position) errors.push('Position is required');
+        if (!formData.jobTitle.trim()) errors.push('Job Title is required');
+        if (!formData.employmentType) errors.push('Employment Type is required');
+        if (!formData.workLocation.trim()) errors.push('Work Location is required');
+        break;
+
+      case 'compensation':
+        if (!formData.bankName.trim()) errors.push('Bank Name is required');
+        if (!formData.accountNumber.trim()) errors.push('Account Number is required');
+        if (!formData.ifscCode.trim()) errors.push('IFSC Code is required');
+        break;
+
+      case 'emergency':
+        if (!formData.emergencyContactName.trim()) errors.push('Emergency Contact Name is required');
+        if (!formData.emergencyContactRelation) errors.push('Emergency Contact Relationship is required');
+        if (!formData.emergencyContactPhone.trim()) errors.push('Emergency Contact Phone is required');
+        break;
+
+      case 'documents':
+        // All fields in documents section are optional
+        break;
+
+      case 'additional':
+        // All fields in additional section are optional
+        break;
+
+      default:
+        break;
+    }
+
+    setValidationErrors(errors);
+    return errors.length === 0;
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,7 +239,10 @@ export const CreateEmployee = () => {
               {sections.map((section) => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => {
+                    setActiveSection(section.id);
+                    setValidationErrors([]);
+                  }}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all whitespace-nowrap ${
                     activeSection === section.id
                       ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
@@ -190,6 +259,25 @@ export const CreateEmployee = () => {
           {/* Form */}
           <form onSubmit={handleSubmit}>
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-medium text-red-800">Please fix the following errors:</h3>
+                      <ul className="mt-2 text-sm text-red-700 list-disc list-inside space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Personal Information Section */}
               {activeSection === 'personal' && (
@@ -923,6 +1011,7 @@ export const CreateEmployee = () => {
                     const currentIndex = sections.findIndex(s => s.id === activeSection);
                     if (currentIndex > 0) {
                       setActiveSection(sections[currentIndex - 1].id);
+                      setValidationErrors([]);
                     }
                   }}
                   disabled={activeSection === 'personal'}
@@ -936,9 +1025,15 @@ export const CreateEmployee = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        const currentIndex = sections.findIndex(s => s.id === activeSection);
-                        if (currentIndex < sections.length - 1) {
-                          setActiveSection(sections[currentIndex + 1].id);
+                        if (validateSection(activeSection)) {
+                          const currentIndex = sections.findIndex(s => s.id === activeSection);
+                          if (currentIndex < sections.length - 1) {
+                            setActiveSection(sections[currentIndex + 1].id);
+                            setValidationErrors([]);
+                          }
+                        } else {
+                          // Scroll to top to show error messages
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
                         }
                       }}
                       className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors shadow-md"

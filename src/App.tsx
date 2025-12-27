@@ -10,11 +10,17 @@ import ListEmployees from './pages/ListEmployees';
 import ViewEmployee from './pages/ViewEmployee';
 
 function App() {
+  // Debug: verify that authorizationParams (audience/scope) are set at runtime
+  console.debug('Auth0 authorizationParams:', auth0Config.authorizationParams, 'cacheLocation:', auth0Config.cacheLocation);
+
   return (
     <Auth0Provider
       domain={auth0Config.domain}
       clientId={auth0Config.clientId}
       authorizationParams={auth0Config.authorizationParams}
+      // Enable refresh tokens for SPA and persist into the configured cache location
+      useRefreshTokens={true}
+      cacheLocation={auth0Config.cacheLocation}
     >
       <Router>
         <Routes>
