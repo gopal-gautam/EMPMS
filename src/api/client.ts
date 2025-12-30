@@ -9,8 +9,14 @@ const api = axios.create({
 
 // Attach token if available. Don't add an empty Authorization header when token is missing.
 api.interceptors.request.use(async (config) => {
-  const token = await getAccessTokenSilently();
-  console.log("Retrieved Access Token:", token); // Debug log (remove in prod)
+  const token = await getAccessTokenSilently({
+    authorizationParams: {
+      audience: 'https://empms.example.com/',
+      scope: 'openid profile email',
+      ignoreCache: true
+    }
+  });
+  // console.log("Retrieved Access Token:", token); // Debug log (remove in prod)
   if (token) {
     if (config.headers) {
       (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;

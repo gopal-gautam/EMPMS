@@ -8,5 +8,6 @@ export const auth0Config = {
     // Include audience and offline_access so Auth0 can issue a refresh token when requested
     audience: import.meta.env.VITE_AUTH0_AUDIENCE || undefined,
     scope: 'openid profile email offline_access',
+    prompt: 'login',
   },
 };
