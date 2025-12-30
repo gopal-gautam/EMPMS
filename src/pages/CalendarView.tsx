@@ -1,85 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LayoutWithSidebarTopbar } from '../layouts/LayoutWithSidebarTopbar';
 import { ClockInOut } from '../types/attendance';
-
-// Mock data
-const mockClockInOutData: ClockInOut[] = [
-  {
-    id: '1',
-    employeeId: 'EMP001',
-    firstName: 'Suresh',
-    lastName: 'Adhikari',
-    date: '2025-12-22',
-    clockInTime: '09:00',
-    clockOutTime: '17:30',
-    notes: 'Regular shift'
-  },
-  {
-    id: '2',
-    employeeId: 'EMP002',
-    firstName: 'Niroj',
-    lastName: 'Shrestha',
-    date: '2025-12-22',
-    clockInTime: '08:30',
-    clockOutTime: '16:45',
-  },
-  {
-    id: '3',
-    employeeId: 'EMP001',
-    firstName: 'Suresh',
-    lastName: 'Adhikari',
-    date: '2025-12-23',
-    clockInTime: '09:15',
-    clockOutTime: '18:00',
-  },
-  {
-    id: '4',
-    employeeId: 'EMP003',
-    firstName: 'Pragyan',
-    lastName: 'Thapa',
-    date: '2025-12-23',
-    clockInTime: '10:00',
-    clockOutTime: '19:00',
-    notes: 'Late start - doctor appointment'
-  },
-  {
-    id: '5',
-    employeeId: 'EMP002',
-    firstName: 'Niroj',
-    lastName: 'Shrestha',
-    date: '2025-12-24',
-    clockInTime: '08:45',
-    clockOutTime: '13:00',
-    notes: 'Half day - holiday'
-  },
-  {
-    id: '6',
-    employeeId: 'EMP004',
-    firstName: 'Aashish',
-    lastName: 'Ramtel',
-    date: '2025-12-25',
-    clockInTime: '09:00',
-    clockOutTime: '17:00',
-  },
-  {
-    id: '7',
-    employeeId: 'EMP001',
-    firstName: 'Suresh',
-    lastName: 'Adhikari',
-    date: '2025-12-26',
-    clockInTime: '08:30',
-    clockOutTime: '17:30',
-  },
-  {
-    id: '8',
-    employeeId: 'EMP005',
-    firstName: 'Charlie',
-    lastName: 'Brown',
-    date: '2025-12-28',
-    clockInTime: '09:30',
-    // Not clocked out yet
-  },
-];
+import { getEmployees } from '../api/employees';
+import { getClockInOuts, createClockInOut, updateClockInOut, deleteClockInOut } from '../api/clock-in-outs';
+import type { Employee } from '../types/employee';
 
 type ViewMode = 'month' | 'week' | 'day';
 
@@ -87,8 +11,8 @@ interface DetailModalProps {
   entry: ClockInOut | null;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (entry: ClockInOut) => void;
-  onDelete: (id: string) => void;
+  onSave: (entry: ClockInOut) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({ entry, isOpen, onClose, onSave, onDelete }) => {
@@ -100,16 +24,16 @@ const DetailModal: React.FC<DetailModalProps> = ({ entry, isOpen, onClose, onSav
 
   if (!isOpen || !editedEntry) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editedEntry) {
-      onSave(editedEntry);
+      await onSave(editedEntry);
       onClose();
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (editedEntry && window.confirm('Are you sure you want to delete this entry?')) {
-      onDelete(editedEntry.id);
+      await onDelete(editedEntry.id);
       onClose();
     }
   };
@@ -212,7 +136,7 @@ interface AddEntryModalProps {
   date: string;
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (entry: Omit<ClockInOut, 'id'>) => void;
+  onAdd: (entry: Omit<ClockInOut, 'id'>) => Promise<void>;
 }
 
 const AddEntryModal: React.FC<AddEntryModalProps> = ({ date, isOpen, onClose, onAdd }) => {
@@ -230,11 +154,52 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({ date, isOpen, onClose, on
     setNewEntry(prev => ({ ...prev, date }));
   }, [date]);
 
+  // Suggestions for employee lookup
+  const [suggestions, setSuggestions] = useState<Employee[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<number | null>(null);
+
+  // Fetch limited employee fields and filter client-side when employeeId changes
+  useEffect(() => {
+    if (!isOpen) {
+      setSuggestions([]);
+      return;
+    }
+    const q = (newEntry.employeeId || '').trim();
+    if (debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+    }
+    if (q.length === 0) {
+      setSuggestions([]);
+      return;
+    }
+    debounceRef.current = window.setTimeout(async () => {
+      setLoadingSuggestions(true);
+      try {
+        const employees = await getEmployees({ fields: ['employeeId', 'firstName', 'lastName'] });
+        const qLower = q.toLowerCase();
+        const filtered = employees.filter(emp => {
+          const id = (emp.employeeId || '').toLowerCase();
+          const name = `${(emp.firstName || '')} ${(emp.lastName || '')}`.toLowerCase();
+          return id.includes(qLower) || name.includes(qLower);
+        });
+        setSuggestions(filtered.slice(0, 10));
+      } catch (e) {
+        setSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }, 300);
+    return () => {
+      if (debounceRef.current) window.clearTimeout(debounceRef.current);
+    };
+  }, [newEntry.employeeId, isOpen]);
+
   if (!isOpen) return null;
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newEntry.employeeId && newEntry.firstName && newEntry.lastName && newEntry.clockInTime) {
-      onAdd(newEntry);
+      await onAdd(newEntry);
       onClose();
       // Reset form
       setNewEntry({
@@ -265,15 +230,46 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({ date, isOpen, onClose, on
         </div>
 
         <div className="space-y-4">
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID *</label>
             <input
               type="text"
               value={newEntry.employeeId}
-              onChange={(e) => setNewEntry({ ...newEntry, employeeId: e.target.value })}
+              onChange={(e) => {
+                setNewEntry({ ...newEntry, employeeId: e.target.value });
+              }}
+              onBlur={() => {
+                // Delay hiding to allow click on suggestion
+                setTimeout(() => setSuggestions([]), 150);
+              }}
+              onFocus={() => {
+                // effect picks up value and fetches suggestions if present
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="EMP001"
+              aria-autocomplete="list"
+              aria-controls="employee-suggest-list"
             />
+            {loadingSuggestions && <div className="absolute right-2 top-8 text-sm text-gray-500">Loading...</div>}
+            {suggestions.length > 0 && (
+              <ul id="employee-suggest-list" role="listbox" className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md max-h-48 overflow-auto shadow-md">
+                {suggestions.map((emp) => (
+                  <li
+                    key={emp.employeeId || emp.id || `${emp.firstName}-${emp.lastName}`}
+                    role="option"
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // prevent blur before click
+                      setNewEntry({ ...newEntry, employeeId: emp.employeeId || '', firstName: emp.firstName || '', lastName: emp.lastName || '' });
+                      setSuggestions([]);
+                    }}
+                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                  >
+                    <div className="text-sm font-medium">{emp.employeeId} — {emp.firstName} {emp.lastName}</div>
+                    <div className="text-xs text-gray-500">{emp.firstName} {emp.lastName}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -362,33 +358,66 @@ const AddEntryModal: React.FC<AddEntryModalProps> = ({ date, isOpen, onClose, on
 const CalendarView: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [clockInOutData, setClockInOutData] = useState<ClockInOut[]>(mockClockInOutData);
+  const [clockInOutData, setClockInOutData] = useState<ClockInOut[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<ClockInOut | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // Fetch clock-in-outs from API on mount
+  useEffect(() => {
+    const fetchClockInOuts = async () => {
+      try {
+        setLoading(true);
+        const data = await getClockInOuts();
+        console.log('Fetched clock-in-outs:', data);
+        console.log('Number of entries:', data.length);
+        setClockInOutData(data);
+      } catch (error) {
+        console.error('Failed to fetch clock-in-outs:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClockInOuts();
+  }, []);
 
   const handleEntryClick = (entry: ClockInOut) => {
     setSelectedEntry(entry);
     setIsDetailModalOpen(true);
   };
 
-  const handleSaveEntry = (updatedEntry: ClockInOut) => {
-    setClockInOutData(data =>
-      data.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
-    );
+  const handleSaveEntry = async (updatedEntry: ClockInOut) => {
+    try {
+      const updated = await updateClockInOut(updatedEntry.id, updatedEntry);
+      setClockInOutData(data =>
+        data.map(entry => entry.id === updated.id ? updated : entry)
+      );
+    } catch (error) {
+      console.error('Failed to update clock-in-out:', error);
+      alert('Failed to update entry. Please try again.');
+    }
   };
 
-  const handleDeleteEntry = (id: string) => {
-    setClockInOutData(data => data.filter(entry => entry.id !== id));
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      await deleteClockInOut(id);
+      setClockInOutData(data => data.filter(entry => entry.id !== id));
+    } catch (error) {
+      console.error('Failed to delete clock-in-out:', error);
+      alert('Failed to delete entry. Please try again.');
+    }
   };
 
-  const handleAddEntry = (newEntry: Omit<ClockInOut, 'id'>) => {
-    const entry: ClockInOut = {
-      ...newEntry,
-      id: Date.now().toString()
-    };
-    setClockInOutData([...clockInOutData, entry]);
+  const handleAddEntry = async (newEntry: Omit<ClockInOut, 'id'>) => {
+    try {
+      const created = await createClockInOut(newEntry);
+      setClockInOutData([...clockInOutData, created]);
+    } catch (error) {
+      console.error('Failed to create clock-in-out:', error);
+      alert('Failed to add entry. Please try again.');
+    }
   };
 
   const handleCellClick = (date: string) => {
@@ -397,7 +426,11 @@ const CalendarView: React.FC = () => {
   };
 
   const getEntriesForDate = (date: string): ClockInOut[] => {
-    return clockInOutData.filter(entry => entry.date === date);
+    const entries = clockInOutData.filter(entry => entry.date === date);
+    if (entries.length > 0) {
+      console.log(`Entries for ${date}:`, entries);
+    }
+    return entries;
   };
 
   const formatDate = (date: Date): string => {
@@ -734,9 +767,17 @@ const CalendarView: React.FC = () => {
         </div>
 
         <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-auto">
-          {viewMode === 'month' && renderMonthView()}
-          {viewMode === 'week' && renderWeekView()}
-          {viewMode === 'day' && renderDayView()}
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-gray-500">Loading clock-in/out data...</div>
+            </div>
+          ) : (
+            <>
+              {viewMode === 'month' && renderMonthView()}
+              {viewMode === 'week' && renderWeekView()}
+              {viewMode === 'day' && renderDayView()}
+            </>
+          )}
         </div>
 
         <DetailModal

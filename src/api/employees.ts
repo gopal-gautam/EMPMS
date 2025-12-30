@@ -1,8 +1,16 @@
 import api from './client';
 import type { Employee } from '../types/employee';
 
-export const getEmployees = async (): Promise<Employee[]> => {
-  const { data } = await api.get<Employee[]>('/employees');
+export type GetEmployeesOptions = {
+  fields?: string | string[];
+};
+
+export const getEmployees = async (options?: GetEmployeesOptions): Promise<Employee[]> => {
+  const params = options?.fields
+    ? { fields: Array.isArray(options.fields) ? options.fields.join(',') : options.fields }
+    : undefined;
+
+  const { data } = await api.get<Employee[]>('/employees', { params });
   return data;
 };
 

@@ -11,9 +11,8 @@ const api = axios.create({
 api.interceptors.request.use(async (config) => {
   const token = await getAccessTokenSilently({
     authorizationParams: {
-      audience: 'https://empms.example.com/',
-      scope: 'openid profile email',
-      ignoreCache: true
+      audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+      scope: 'openid profile email'
     }
   });
   // console.log("Retrieved Access Token:", token); // Debug log (remove in prod)

@@ -7,6 +7,18 @@ export interface ClockInOut {
   lastName: string;
   date: string; // ISO date
   clockInTime: string; // HH:mm format
-  clockOutTime?: string; // HH:mm format (optional if not clocked out yet)
+  clockOutTime?: string | null; // HH:mm format (optional if not clocked out yet)
   notes?: string;
+}
+
+// Backend API response type
+export interface ClockInOutApiResponse {
+  id: string;
+  employeeId: string;
+  date: string; // ISO timestamp
+  clockInTime: string;
+  clockOutTime?: string | null;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
