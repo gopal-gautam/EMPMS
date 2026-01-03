@@ -9,6 +9,8 @@ import { CreateEmployee } from './pages/CreateEmployee';
 import ListEmployees from './pages/ListEmployees';
 import ViewEmployee from './pages/ViewEmployee';
 import CalendarView from './pages/CalendarView';
+import EmployeeDashboard from './pages/EmployeeDashboard';
+import EmployeeCalendar from './pages/EmployeeCalendar';
 
 function App() {
   // Debug: verify that authorizationParams (audience/scope) are set at runtime
@@ -31,6 +33,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/dashboard"
+            element={
+              <ProtectedRoute>
+                <EmployeeDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/calendar"
+            element={
+              <ProtectedRoute>
+                <EmployeeCalendar />
               </ProtectedRoute>
             }
           />
