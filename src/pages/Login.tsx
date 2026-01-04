@@ -16,7 +16,7 @@ export const Login = () => {
         const roles = extractRolesFromClaims(claims) || extractRolesFromUser(user);
         // console.log('User roles:', roles);
         const isAdmin = roles?.some(r => r.toLowerCase() === 'admin') ?? false;
-        navigate(isAdmin ? '/admin' : '/dashboard');
+        navigate(isAdmin ? '/admin' : '/employee/dashboard');
       } catch (err) {
         console.error('Error reading token claims for role check:', err);
         navigate('/dashboard');
