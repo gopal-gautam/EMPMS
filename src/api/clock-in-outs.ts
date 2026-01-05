@@ -1,5 +1,5 @@
 import api from './client';
-import type { ClockInOut } from '../types/attendance';
+import type { ClockInOut, CreateMyClockInPayload, UpdateMyClockInPayload } from '../types/attendance';
 
 const formatDateOnly = (isoOrDateStr: string): string => {
   const date = new Date(isoOrDateStr);
@@ -59,4 +59,32 @@ export const updateClockInOut = async (id: string, payload: Partial<ClockInOut>)
 
 export const deleteClockInOut = async (id: string): Promise<void> => {
   await api.delete(`/clock-in-outs/${id}`);
+};
+
+// --- Employee-specific endpoints for /clock-in-outs/self ---
+
+/**
+ * Get clock-in/out records for the currently authenticated employee
+ */
+export const getMyClockInOuts = async (): Promise<ClockInOut[]> => {
+  const { data } = await api.get<ClockInOut[]>('/clock-in-outs/self');
+  return data.map(item => ({ ...item, date: formatDateOnly(item.date) }));
+};
+
+/**
+ * Create a clock-in record for the current employee.
+ * Only `clockInTime` is required by the backend for creation.
+ */
+export const createMyClockInOut = async (payload: CreateMyClockInPayload): Promise<ClockInOut> => {
+  const { data } = await api.post<ClockInOut>('/clock-in-outs/self', payload);
+  return { ...data, date: formatDateOnly(data.date) };
+};
+
+/**
+ * Update a clock-in/out record for the current employee.
+ * The backend supports updating `clockOutTime` and `notes` (and may accept `id` in the body).
+ */
+export const updateMyClockInOut = async (id: string, payload: UpdateMyClockInPayload): Promise<ClockInOut> => {
+  const { data } = await api.patch<ClockInOut>(`/clock-in-outs/self/${id}`, payload);
+  return { ...data, date: formatDateOnly(data.date) };
 };

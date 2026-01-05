@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EmployeeLayout from '../layouts/EmployeeLayout';
 import { ClockInOut } from '../types/attendance';
+import { useMyClockInOuts, useCreateMyClockIn, useUpdateMyClockIn } from '../hooks/useClockInOuts';
 import { useAuth0 } from '@auth0/auth0-react';
 
 type ViewMode = 'month' | 'week' | 'day';
@@ -10,9 +11,11 @@ interface NoteModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (entry: ClockInOut) => void;
+  onClockOut?: () => void;
+  isSaving?: boolean;
 }
 
-const NoteModal: React.FC<NoteModalProps> = ({ entry, isOpen, onClose, onSave }) => {
+const NoteModal: React.FC<NoteModalProps> = ({ entry, isOpen, onClose, onSave, onClockOut, isSaving }) => {
   const [notes, setNotes] = useState(entry?.notes || '');
 
   React.useEffect(() => {
@@ -24,7 +27,7 @@ const NoteModal: React.FC<NoteModalProps> = ({ entry, isOpen, onClose, onSave })
   const handleSave = () => {
     if (entry) {
       onSave({ ...entry, notes });
-      onClose();
+      // onClose is handled by caller after mutation
     }
   };
 
@@ -99,15 +102,26 @@ const NoteModal: React.FC<NoteModalProps> = ({ entry, isOpen, onClose, onSave })
         <div className="flex justify-end space-x-2 mt-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
+            disabled={isSaving}
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
+          { !entry.clockOutTime && (
+            <button
+              onClick={onClockOut}
+              disabled={isSaving}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              Clock Out Now
+            </button>
+          ) }
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            disabled={isSaving}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            Save Notes
+            {isSaving ? 'Saving...' : 'Save Notes'}
           </button>
         </div>
       </div>
@@ -116,65 +130,42 @@ const NoteModal: React.FC<NoteModalProps> = ({ entry, isOpen, onClose, onSave })
 };
 
 const EmployeeCalendar: React.FC = () => {
-  const { user } = useAuth0();
+  // not using user directly here - auth is handled by route wrapper
+  useAuth0();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEntry, setSelectedEntry] = useState<ClockInOut | null>(null);
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
 
-  // Mock data for current employee's clock-in/out records
-  const [clockInOutData, setClockInOutData] = useState<ClockInOut[]>([
-    {
-      id: '1',
-      employeeId: 'EMP001',
-      firstName: user?.name?.split(' ')[0] || 'John',
-      lastName: user?.name?.split(' ')[1] || 'Doe',
-      date: '2026-01-02',
-      clockInTime: '09:15',
-      clockOutTime: '17:30',
-      notes: 'Regular workday'
-    },
-    {
-      id: '2',
-      employeeId: 'EMP001',
-      firstName: user?.name?.split(' ')[0] || 'John',
-      lastName: user?.name?.split(' ')[1] || 'Doe',
-      date: '2026-01-03',
-      clockInTime: '09:00',
-      clockOutTime: '17:00',
-      notes: ''
-    },
-    {
-      id: '3',
-      employeeId: 'EMP001',
-      firstName: user?.name?.split(' ')[0] || 'John',
-      lastName: user?.name?.split(' ')[1] || 'Doe',
-      date: '2025-12-30',
-      clockInTime: '08:45',
-      clockOutTime: '16:45',
-      notes: 'Left early for doctor appointment'
-    },
-    {
-      id: '4',
-      employeeId: 'EMP001',
-      firstName: user?.name?.split(' ')[0] || 'John',
-      lastName: user?.name?.split(' ')[1] || 'Doe',
-      date: '2025-12-31',
-      clockInTime: '09:00',
-      clockOutTime: '17:00',
-      notes: ''
-    },
-    {
-      id: '5',
-      employeeId: 'EMP001',
-      firstName: user?.name?.split(' ')[0] || 'John',
-      lastName: user?.name?.split(' ')[1] || 'Doe',
-      date: '2026-01-01',
-      clockInTime: '09:30',
-      clockOutTime: '17:30',
-      notes: 'New Year - partial holiday'
-    },
-  ]);
+  // Use API-backed hooks for current employee
+  const { data: clockInOutData = [], isLoading } = useMyClockInOuts();
+  const { mutate: createClockInMutate, isLoading: isCreating } = useCreateMyClockIn();
+  const { mutate: updateClockInMutate, isLoading: isUpdating } = useUpdateMyClockIn();
+
+  const getCurrentTimeHHMM = () => {
+    const d = new Date();
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  };
+
+  const handleClockIn = () => {
+    const now = getCurrentTimeHHMM();
+    createClockInMutate({ clockInTime: now }, {
+      onSuccess: (created: ClockInOut) => {
+        // open modal to allow adding notes immediately
+        setSelectedEntry(created);
+        setIsNoteModalOpen(true);
+      }
+    });
+  };
+
+  const handleClockOutNow = () => {
+    if (!selectedEntry) return;
+    updateClockInMutate({ id: selectedEntry.id, payload: { clockOutTime: getCurrentTimeHHMM() } }, {
+      onSuccess: () => setIsNoteModalOpen(false)
+    });
+  };
 
   const handleEntryClick = (entry: ClockInOut) => {
     setSelectedEntry(entry);
@@ -182,9 +173,9 @@ const EmployeeCalendar: React.FC = () => {
   };
 
   const handleSaveNotes = (updatedEntry: ClockInOut) => {
-    setClockInOutData(data =>
-      data.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
-    );
+    // Update notes via API
+    updateClockInMutate({ id: updatedEntry.id, payload: { notes: updatedEntry.notes } });
+    setIsNoteModalOpen(false);
   };
 
   const getEntriesForDate = (date: string): ClockInOut[] => {
@@ -475,6 +466,15 @@ const EmployeeCalendar: React.FC = () => {
               >
                 Today
               </button>
+
+              <button
+                onClick={handleClockIn}
+                disabled={isCreating}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all disabled:opacity-50"
+                title="Clock In now"
+              >
+                {isCreating ? 'Clocking In...' : 'Clock In'}
+              </button>
               <button
                 onClick={navigateNext}
                 className="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors"
@@ -531,9 +531,15 @@ const EmployeeCalendar: React.FC = () => {
 
         {/* Calendar View */}
         <div className="flex-1 bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-auto">
-          {viewMode === 'month' && renderMonthView()}
-          {viewMode === 'week' && renderWeekView()}
-          {viewMode === 'day' && renderDayView()}
+          {isLoading ? (
+            <div className="p-6 text-center text-gray-500">Loading clock entries...</div>
+          ) : (
+            <>
+              {viewMode === 'month' && renderMonthView()}
+              {viewMode === 'week' && renderWeekView()}
+              {viewMode === 'day' && renderDayView()}
+            </>
+          )}
         </div>
 
         <NoteModal
@@ -541,6 +547,8 @@ const EmployeeCalendar: React.FC = () => {
           isOpen={isNoteModalOpen}
           onClose={() => setIsNoteModalOpen(false)}
           onSave={handleSaveNotes}
+          onClockOut={handleClockOutNow}
+          isSaving={isUpdating}
         />
       </div>
     </EmployeeLayout>

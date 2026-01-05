@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LayoutWithSidebarTopbar } from '../layouts/LayoutWithSidebarTopbar';
 import type { Employee } from '../types/employee';
 import api from '../api/client';
+import { useDeleteEmployee } from '../hooks/useDeleteEmployee';
 
 const ViewEmployee: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -22,9 +23,11 @@ const ViewEmployee: React.FC = () => {
     navigate(`/employees/${id}/edit`);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    const { mutate: deleteEmployeeMutate} = useDeleteEmployee();
     try {
-      await api.delete(`/employees/${id}`);
+      // await api.delete(`/employees/${id}`);
+      deleteEmployeeMutate(id!);
       navigate('/employees');
     } catch (error) {
       console.error('Error deleting employee:', error);
