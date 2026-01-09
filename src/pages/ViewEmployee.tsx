@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LayoutWithSidebarTopbar } from '../layouts/LayoutWithSidebarTopbar';
 import type { Employee } from '../types/employee';
 import api from '../api/client';
-import { useDeleteEmployee } from '../hooks/useDeleteEmployee';
+import { useDeleteEmployee } from '../hooks/useEmployees';
 
 const ViewEmployee: React.FC = () => {
   const { id } = useParams<{ id: string }>();
